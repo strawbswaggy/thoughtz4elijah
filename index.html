@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>thoughtz</title>
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Segoe UI", Arial, sans-serif;
+      }
+
+      body {
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: url("https://i.pinimg.com/originals/c8/e1/57/c8e15787a56cba7278146d79c93fd7bc.gif");
+        background-size: cover;
+        color: white;
+      }
+
+      /* OVERLAY */
+      .overlay {
+        width: 100%;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: radial-gradient(
+          circle at center,
+          rgba(255, 0, 0, 0.15),
+          rgba(0, 0, 0, 0.9)
+        );
+        backdrop-filter: blur(8px);
+      }
+
+      .page {
+        display: none;
+        width: 100%;
+      }
+      .active {
+        display: flex;
+        justify-content: center;
+      }
+
+      /* CARD */
+      .card {
+        width: 100%;
+        max-width: 650px;
+        padding: 25px;
+        border-radius: 20px;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 0, 0, 0.4);
+        box-shadow: 0 0 25px rgba(255, 0, 0, 0.3);
+        text-align: center;
+        transition: 0.3s;
+      }
+
+      .card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 0 40px rgba(255, 0, 0, 0.6);
+      }
+
+      /* TITLE */
+      h1 {
+        margin-bottom: 10px;
+        text-shadow: 0 0 10px red;
+      }
+
+      /* INPUT */
+      input,
+      textarea {
+        width: 100%;
+        padding: 12px;
+        margin-top: 12px;
+        border-radius: 10px;
+        border: 1px solid #333;
+        background: #111;
+        color: white;
+        transition: 0.2s;
+      }
+
+      input:focus,
+      textarea:focus {
+        border-color: red;
+        box-shadow: 0 0 10px red;
+      }
+
+      /* BUTTON */
+      button {
+        width: 100%;
+        padding: 12px;
+        margin-top: 12px;
+        border: none;
+        border-radius: 10px;
+        background: linear-gradient(45deg, red, #ff4d4d);
+        color: white;
+        font-weight: bold;
+        cursor: pointer;
+        transition: 0.25s;
+      }
+
+      button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0 12px red;
+      }
+
+      /* NOTE */
+      .note {
+        background: rgba(20, 20, 20, 0.9);
+        margin-top: 15px;
+        padding: 15px;
+        border-radius: 12px;
+        border-left: 3px solid red;
+      }
+
+      /* REPLY */
+      .reply {
+        background: #1a1a1a;
+        margin-top: 10px;
+        padding: 10px;
+        border-radius: 10px;
+      }
+
+      .reply button {
+        width: auto;
+        padding: 5px 10px;
+        margin-top: 5px;
+        margin-right: 5px;
+        font-size: 12px;
+      }
+
+      /* TIME */
+      .time {
+        font-size: 11px;
+        color: #aaa;
+      }
+
+      /* SCROLL */
+      #writerNotes,
+      #viewerNotes {
+        max-height: 320px;
+        overflow-y: auto;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="overlay">
+      <div id="passwordPage" class="page active">
+        <div class="card">
+          <h1>🕷 thoughtz</h1>
+          <input
+            id="pass"
+            type="password"
+            placeholder="Enter password (hint bday!)"
+          />
+          <button onclick="login()">ENTER</button>
+        </div>
+      </div>
+
+      <div id="modePage" class="page">
+        <div class="card">
+          <h1>Mode</h1>
+          <button onclick="mode('writer')">Writer</button>
+          <button onclick="mode('viewer')">Viewer</button>
+        </div>
+      </div>
+
+      <div id="writerPage" class="page">
+        <div class="card">
+          <h1>Writer</h1>
+          <textarea id="noteInput"></textarea>
+          <button onclick="addNote()">Post</button>
+          <button onclick="back()">Back</button>
+          <div id="writerNotes"></div>
+        </div>
+      </div>
+
+      <div id="viewerPage" class="page">
+        <div class="card">
+          <h1>Viewer</h1>
+          <button onclick="back()">Back</button>
+          <div id="viewerNotes"></div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+      import {
+        getFirestore,
+        collection,
+        addDoc,
+        onSnapshot,
+        updateDoc,
+        deleteDoc,
+        doc,
+      } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyDTlahuS9_JdyMuBA4_vGpRaYK7l04xc1Y",
+        authDomain: "thoughtz-36311.firebaseapp.com",
+        projectId: "thoughtz-36311",
+        storageBucket: "thoughtz-36311.firebasestorage.app",
+        messagingSenderId: "987082044864",
+        appId: "1:987082044864:web:1cc521d2cfc894c6eac425",
+        measurementId: "G-J9M5GWLVX0",
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+      const notesRef = collection(db, "notes");
+
+      const PASS = "0420";
+      let notes = [];
+
+      /* UI */
+      window.show = (p) => {
+        document
+          .querySelectorAll(".page")
+          .forEach((x) => x.classList.remove("active"));
+        document.getElementById(p).classList.add("active");
+      };
+
+      window.login = () => {
+        if (document.getElementById("pass").value === PASS) {
+          show("modePage");
+        } else alert("Wrong password");
+      };
+
+      window.mode = (m) => {
+        show(m === "writer" ? "writerPage" : "viewerPage");
+      };
+
+      window.back = () => show("modePage");
+
+      /* REALTIME */
+      onSnapshot(notesRef, (snap) => {
+        notes = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        loadWriter();
+        loadViewer();
+      });
+
+      /* ADD NOTE */
+      window.addNote = async () => {
+        let text = document.getElementById("noteInput").value.trim();
+        if (!text) return;
+
+        await addDoc(notesRef, {
+          text,
+          time: new Date().toLocaleString(),
+          replies: [],
+        });
+
+        document.getElementById("noteInput").value = "";
+      };
+
+      /* NOTE ACTIONS */
+      window.deleteNote = async (id) => {
+        await deleteDoc(doc(db, "notes", id));
+      };
+
+      window.editNote = async (id, old) => {
+        let t = prompt("Edit:", old);
+        if (!t) return;
+        await updateDoc(doc(db, "notes", id), { text: t });
+      };
+
+      /* ADD REPLY */
+      window.addReply = async (id, i) => {
+        let txt = document.getElementById("r" + i).value.trim();
+        if (!txt) return;
+
+        let n = notes[i];
+        n.replies.push({
+          text: txt,
+          time: new Date().toLocaleString(),
+        });
+
+        await updateDoc(doc(db, "notes", id), {
+          replies: n.replies,
+        });
+
+        document.getElementById("r" + i).value = "";
+      };
+
+      /* EDIT REPLY */
+      window.editReply = async (noteId, replyIndex, noteIndex) => {
+        let old = notes[noteIndex].replies[replyIndex].text;
+        let updated = prompt("Edit reply:", old);
+        if (!updated) return;
+
+        let n = notes[noteIndex];
+        n.replies[replyIndex].text = updated;
+
+        await updateDoc(doc(db, "notes", noteId), {
+          replies: n.replies,
+        });
+      };
+
+      /* DELETE REPLY */
+      window.deleteReply = async (noteId, replyIndex, noteIndex) => {
+        let n = notes[noteIndex];
+        n.replies.splice(replyIndex, 1);
+
+        await updateDoc(doc(db, "notes", noteId), {
+          replies: n.replies,
+        });
+      };
+
+      /* LOAD WRITER */
+      function loadWriter() {
+        let c = document.getElementById("writerNotes");
+        c.innerHTML = "";
+
+        notes.forEach((n, i) => {
+          let replies = n.replies
+            .map(
+              (r) => `
+      <div class="reply">${r.text}<div class="time">${r.time}</div></div>
+    `
+            )
+            .join("");
+
+          c.innerHTML += `
+    <div class="note">
+      ${n.text}
+      <div class="time">${n.time}</div>
+
+      <button onclick="editNote('${n.id}',\`${n.text}\`)">Edit</button>
+      <button onclick="deleteNote('${n.id}')">Delete</button>
+
+      ${replies}
+    </div>`;
+        });
+      }
+
+      /* LOAD VIEWER */
+      function loadViewer() {
+        let c = document.getElementById("viewerNotes");
+        c.innerHTML = "";
+
+        notes.forEach((n, i) => {
+          let replies = n.replies
+            .map(
+              (r, ri) => `
+      <div class="reply">
+        ${r.text}
+        <div class="time">${r.time}</div>
+
+        <button onclick="editReply('${n.id}',${ri},${i})">Edit</button>
+        <button onclick="deleteReply('${n.id}',${ri},${i})">Delete</button>
+      </div>
+    `
+            )
+            .join("");
+
+          c.innerHTML += `
+    <div class="note">
+      ${n.text}
+      <div class="time">${n.time}</div>
+
+      <input id="r${i}" placeholder="reply">
+      <button onclick="addReply('${n.id}',${i})">Reply</button>
+
+      ${replies}
+    </div>`;
+        });
+      }
+    </script>
+  </body>
+</html>
