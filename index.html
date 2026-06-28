@@ -117,6 +117,9 @@
         padding: 15px;
         border-radius: 12px;
         border-left: 3px solid red;
+        text-align: left;
+        display: flex;
+        flex-direction: column;
       }
 
       /* REPLY */
@@ -125,20 +128,48 @@
         margin-top: 10px;
         padding: 10px;
         border-radius: 10px;
+        border-left: 2px solid #555;
+        display: flex;
+        flex-direction: column;
       }
 
-      .reply button {
+      /* WRITER SPECIFIC SUB-REPLY */
+      .writer-response {
+        background: rgba(255, 0, 0, 0.15);
+        margin-top: 8px;
+        margin-left: 15px;
+        padding: 8px;
+        border-radius: 8px;
+        border-left: 2px solid red;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .reply button, .note button {
         width: auto;
         padding: 5px 10px;
-        margin-top: 5px;
+        margin-top: 8px;
         margin-right: 5px;
         font-size: 12px;
       }
 
-      /* TIME */
+      .button-group {
+        display: flex;
+        flex-wrap: wrap;
+      }
+
+      /* ALIGNED TIME STAMP */
+      .time-container {
+        display: flex;
+        justify-content: flex-end;
+        width: 100%;
+        margin-top: 6px;
+      }
+
       .time {
         font-size: 11px;
-        color: #aaa;
+        color: #888;
+        letter-spacing: 0.3px;
       }
 
       /* SCROLL */
@@ -174,9 +205,9 @@
 
       <div id="writerPage" class="page">
         <div class="card">
-          <h1>Writer</h1>
-          <textarea id="noteInput"></textarea>
-          <button onclick="addNote()">Post</button>
+          <h1>Writer Dashboard</h1>
+          <textarea id="noteInput" placeholder="What's on your mind?"></textarea>
+          <button onclick="addNote()">Post Note</button>
           <button onclick="back()">Back</button>
           <div id="writerNotes"></div>
         </div>
@@ -184,7 +215,7 @@
 
       <div id="viewerPage" class="page">
         <div class="card">
-          <h1>Viewer</h1>
+          <h1>Viewer Feed</h1>
           <button onclick="back()">Back</button>
           <div id="viewerNotes"></div>
         </div>
@@ -220,7 +251,23 @@
       const PASS = "0420";
       let notes = [];
 
-      /* UI */
+      /* HELPER: GET CLEAN STANDARD DATE STRING WITH SECONDS INCLUDED */
+      function getFormattedDate() {
+        const now = new Date();
+        const options = { year: 'numeric', month: 'short', day: '2-digit' };
+        const datePart = now.toLocaleDateString('en-US', options);
+        
+        let hours = now.getHours();
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12;
+        hours = hours ? hours : 12; 
+        
+        return `${datePart} • ${hours}:${minutes}:${seconds} ${ampm}`;
+      }
+
+      /* UI CONTROL */
       window.show = (p) => {
         document
           .querySelectorAll(".page")
@@ -240,7 +287,7 @@
 
       window.back = () => show("modePage");
 
-      /* REALTIME */
+      /* REALTIME DATABASE SYNC */
       onSnapshot(notesRef, (snap) => {
         notes = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
         loadWriter();
@@ -254,7 +301,8 @@
 
         await addDoc(notesRef, {
           text,
-          time: new Date().toLocaleString(),
+          time: getFormattedDate(),
+          timestamp: Date.now(),
           replies: [],
         });
 
@@ -267,36 +315,74 @@
       };
 
       window.editNote = async (id, old) => {
-        let t = prompt("Edit:", old);
+        let t = prompt("Edit note text:", old);
         if (!t) return;
         await updateDoc(doc(db, "notes", id), { text: t });
       };
 
-      /* ADD REPLY */
-      window.addReply = async (id, i) => {
-        let txt = document.getElementById("r" + i).value.trim();
+      /* VIEWER ADDS REPLY */
+      window.addReply = async (id) => {
+        let txt = document.getElementById("r" + id).value.trim();
         if (!txt) return;
 
-        let n = notes[i];
+        let n = notes.find(note => note.id === id);
+        if (!n) return;
+
         n.replies.push({
           text: txt,
-          time: new Date().toLocaleString(),
+          time: getFormattedDate(),
+          writerReply: "",
+          writerTime: ""
         });
 
         await updateDoc(doc(db, "notes", id), {
           replies: n.replies,
         });
 
-        document.getElementById("r" + i).value = "";
+        document.getElementById("r" + id).value = "";
       };
 
-      /* EDIT REPLY */
-      window.editReply = async (noteId, replyIndex, noteIndex) => {
-        let old = notes[noteIndex].replies[replyIndex].text;
+      /* WRITER ADDS/EDITS REPLY TO VIEWER */
+      window.addWriterReply = async (noteId, replyIndex) => {
+        let n = notes.find(note => note.id === noteId);
+        if (!n) return;
+
+        let currentReply = n.replies[replyIndex].writerReply || "";
+        
+        let txt = prompt("Write your response:", currentReply);
+        if (txt === null) return; 
+        txt = txt.trim();
+
+        n.replies[replyIndex].writerReply = txt;
+        n.replies[replyIndex].writerTime = getFormattedDate();
+
+        await updateDoc(doc(db, "notes", noteId), {
+          replies: n.replies
+        });
+      };
+
+      /* WRITER DELETES RESPONSES TO VIEWER */
+      window.deleteWriterReply = async (noteId, replyIndex) => {
+        let n = notes.find(note => note.id === noteId);
+        if (!n) return;
+
+        n.replies[replyIndex].writerReply = "";
+        n.replies[replyIndex].writerTime = "";
+
+        await updateDoc(doc(db, "notes", noteId), {
+          replies: n.replies
+        });
+      };
+
+      /* EDIT VIEWER REPLY */
+      window.editReply = async (noteId, replyIndex) => {
+        let n = notes.find(note => note.id === noteId);
+        if (!n) return;
+
+        let old = n.replies[replyIndex].text;
         let updated = prompt("Edit reply:", old);
         if (!updated) return;
 
-        let n = notes[noteIndex];
         n.replies[replyIndex].text = updated;
 
         await updateDoc(doc(db, "notes", noteId), {
@@ -304,9 +390,11 @@
         });
       };
 
-      /* DELETE REPLY */
-      window.deleteReply = async (noteId, replyIndex, noteIndex) => {
-        let n = notes[noteIndex];
+      /* DELETE VIEWER REPLY */
+      window.deleteReply = async (noteId, replyIndex) => {
+        let n = notes.find(note => note.id === noteId);
+        if (!n) return;
+
         n.replies.splice(replyIndex, 1);
 
         await updateDoc(doc(db, "notes", noteId), {
@@ -314,63 +402,95 @@
         });
       };
 
-      /* LOAD WRITER */
+      /* RENDERING THE WRITER SCREEN (SORTED LATEST FIRST) */
       function loadWriter() {
         let c = document.getElementById("writerNotes");
         c.innerHTML = "";
 
-        notes.forEach((n, i) => {
+        let displayNotes = [...notes].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+        displayNotes.forEach((n) => {
           let replies = n.replies
-            .map(
-              (r) => `
-      <div class="reply">${r.text}<div class="time">${r.time}</div></div>
-    `
-            )
+            .map((r, ri) => {
+              let writerResponseMarkup = r.writerReply 
+                ? `<div class="writer-response">
+                     <span>${r.writerReply.replace(/\n/g, '<br>')}</span>
+                     <div class="time-container"><span class="time">${r.writerTime || n.time}</span></div>
+                     <div class="button-group">
+                       <button onclick="addWriterReply('${n.id}', ${ri})">Edit Response</button>
+                       <button onclick="deleteWriterReply('${n.id}', ${ri})">Delete Response</button>
+                     </div>
+                   </div>`
+                : `<div class="button-group"><button onclick="addWriterReply('${n.id}', ${ri})">Reply</button></div>`;
+
+              return `
+                <div class="reply">
+                  <span>${r.text}</span>
+                  <div class="time-container"><span class="time">${r.time}</span></div>
+                  ${writerResponseMarkup}
+                </div>
+              `;
+            })
             .join("");
 
           c.innerHTML += `
-    <div class="note">
-      ${n.text}
-      <div class="time">${n.time}</div>
+            <div class="note">
+              <h3>${n.text.replace(/\n/g, '<br>')}</h3>
+              <div class="time-container"><span class="time">${n.time}</span></div>
 
-      <button onclick="editNote('${n.id}',\`${n.text}\`)">Edit</button>
-      <button onclick="deleteNote('${n.id}')">Delete</button>
+              <div class="button-group" style="margin-top: 5px;">
+                <button onclick="editNote('${n.id}',\`${n.text}\`)">Edit Note</button>
+                <button onclick="deleteNote('${n.id}')">Delete Note</button>
+              </div>
 
-      ${replies}
-    </div>`;
+              ${replies}
+            </div>`;
         });
       }
 
-      /* LOAD VIEWER */
+      /* RENDERING THE VIEWER FEED SCREEN (SORTED LATEST FIRST) */
       function loadViewer() {
         let c = document.getElementById("viewerNotes");
         c.innerHTML = "";
 
-        notes.forEach((n, i) => {
-          let replies = n.replies
-            .map(
-              (r, ri) => `
-      <div class="reply">
-        ${r.text}
-        <div class="time">${r.time}</div>
+        let displayNotes = [...notes].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
-        <button onclick="editReply('${n.id}',${ri},${i})">Edit</button>
-        <button onclick="deleteReply('${n.id}',${ri},${i})">Delete</button>
-      </div>
-    `
-            )
+        displayNotes.forEach((n) => {
+          let replies = n.replies
+            .map((r, ri) => {
+              let writerResponseMarkup = r.writerReply 
+                ? `<div class="writer-response">
+                     <span>${r.writerReply.replace(/\n/g, '<br>')}</span>
+                     <div class="time-container"><span class="time">${r.writerTime || n.time}</span></div>
+                   </div>`
+                : '';
+
+              return `
+                <div class="reply">
+                  <span>${r.text}</span>
+                  <div class="time-container"><span class="time">${r.time}</span></div>
+
+                  <div class="button-group">
+                    <button onclick="editReply('${n.id}',${ri})">Edit</button>
+                    <button onclick="deleteReply('${n.id}',${ri})">Delete</button>
+                  </div>
+                  
+                  ${writerResponseMarkup}
+                </div>
+              `;
+            })
             .join("");
 
           c.innerHTML += `
-    <div class="note">
-      ${n.text}
-      <div class="time">${n.time}</div>
+            <div class="note">
+              <h3>${n.text.replace(/\n/g, '<br>')}</h3>
+              <div class="time-container"><span class="time">${n.time}</span></div>
 
-      <input id="r${i}" placeholder="reply">
-      <button onclick="addReply('${n.id}',${i})">Reply</button>
+              <input id="r${n.id}" placeholder="Leave a thought...">
+              <div class="button-group"><button onclick="addReply('${n.id}')">Comment</button></div>
 
-      ${replies}
-    </div>`;
+              ${replies}
+            </div>`;
         });
       }
     </script>
