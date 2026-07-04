@@ -145,7 +145,8 @@
         flex-direction: column;
       }
 
-      .reply button, .note button {
+      .reply button,
+      .note button {
         width: auto;
         padding: 5px 10px;
         margin-top: 8px;
@@ -178,6 +179,23 @@
         max-height: 320px;
         overflow-y: auto;
       }
+
+      /* DISCORD-STYLE SPOILER CSS */
+      .spoiler {
+        background-color: #222;
+        color: transparent;
+        border-radius: 3px;
+        padding: 0 2px;
+        cursor: pointer;
+        transition: background-color 0.1s ease, color 0.1s ease;
+        user-select: none;
+      }
+
+      .spoiler.revealed {
+        background-color: rgba(255, 255, 255, 0.1);
+        color: inherit;
+        user-select: text;
+      }
     </style>
   </head>
 
@@ -206,7 +224,10 @@
       <div id="writerPage" class="page">
         <div class="card">
           <h1>Writer Dashboard</h1>
-          <textarea id="noteInput" placeholder="What's on your mind?"></textarea>
+          <textarea
+            id="noteInput"
+            placeholder="What's on your mind? (Use ||spoiler|| for secret text!)"
+          ></textarea>
           <button onclick="addNote()">Post Note</button>
           <button onclick="back()">Back</button>
           <div id="writerNotes"></div>
@@ -251,19 +272,34 @@
       const PASS = "0420";
       let notes = [];
 
+      /* HELPER: PARSE ||SPOILER|| INTO INTERACTIVE ELEMENT */
+      function parseSpoilers(text) {
+        if (!text) return "";
+        // Escapes regular HTML strings, replaces linebreaks, then matches ||text|| patterns safely
+        let formatted = text
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/\n/g, "<br>");
+        return formatted.replace(
+          /\|\|(.*?)\|\|/g,
+          '<span class="spoiler" onclick="this.classList.toggle(\'revealed\')">$1</span>'
+        );
+      }
+
       /* HELPER: GET CLEAN STANDARD DATE STRING WITH SECONDS INCLUDED */
       function getFormattedDate() {
         const now = new Date();
-        const options = { year: 'numeric', month: 'short', day: '2-digit' };
-        const datePart = now.toLocaleDateString('en-US', options);
-        
+        const options = { year: "numeric", month: "short", day: "2-digit" };
+        const datePart = now.toLocaleDateString("en-US", options);
+
         let hours = now.getHours();
-        const minutes = String(now.getMinutes()).padStart(2, '0');
-        const seconds = String(now.getSeconds()).padStart(2, '0');
-        const ampm = hours >= 12 ? 'PM' : 'AM';
+        const minutes = String(now.getMinutes()).padStart(2, "0");
+        const seconds = String(now.getSeconds()).padStart(2, "0");
+        const ampm = hours >= 12 ? "PM" : "AM";
         hours = hours % 12;
-        hours = hours ? hours : 12; 
-        
+        hours = hours ? hours : 12;
+
         return `${datePart} • ${hours}:${minutes}:${seconds} ${ampm}`;
       }
 
@@ -325,14 +361,14 @@
         let txt = document.getElementById("r" + id).value.trim();
         if (!txt) return;
 
-        let n = notes.find(note => note.id === id);
+        let n = notes.find((note) => note.id === id);
         if (!n) return;
 
         n.replies.push({
           text: txt,
           time: getFormattedDate(),
           writerReply: "",
-          writerTime: ""
+          writerTime: "",
         });
 
         await updateDoc(doc(db, "notes", id), {
@@ -344,39 +380,39 @@
 
       /* WRITER ADDS/EDITS REPLY TO VIEWER */
       window.addWriterReply = async (noteId, replyIndex) => {
-        let n = notes.find(note => note.id === noteId);
+        let n = notes.find((note) => note.id === noteId);
         if (!n) return;
 
         let currentReply = n.replies[replyIndex].writerReply || "";
-        
+
         let txt = prompt("Write your response:", currentReply);
-        if (txt === null) return; 
+        if (txt === null) return;
         txt = txt.trim();
 
         n.replies[replyIndex].writerReply = txt;
         n.replies[replyIndex].writerTime = getFormattedDate();
 
         await updateDoc(doc(db, "notes", noteId), {
-          replies: n.replies
+          replies: n.replies,
         });
       };
 
       /* WRITER DELETES RESPONSES TO VIEWER */
       window.deleteWriterReply = async (noteId, replyIndex) => {
-        let n = notes.find(note => note.id === noteId);
+        let n = notes.find((note) => note.id === noteId);
         if (!n) return;
 
         n.replies[replyIndex].writerReply = "";
         n.replies[replyIndex].writerTime = "";
 
         await updateDoc(doc(db, "notes", noteId), {
-          replies: n.replies
+          replies: n.replies,
         });
       };
 
       /* EDIT VIEWER REPLY */
       window.editReply = async (noteId, replyIndex) => {
-        let n = notes.find(note => note.id === noteId);
+        let n = notes.find((note) => note.id === noteId);
         if (!n) return;
 
         let old = n.replies[replyIndex].text;
@@ -392,7 +428,7 @@
 
       /* DELETE VIEWER REPLY */
       window.deleteReply = async (noteId, replyIndex) => {
-        let n = notes.find(note => note.id === noteId);
+        let n = notes.find((note) => note.id === noteId);
         if (!n) return;
 
         n.replies.splice(replyIndex, 1);
@@ -407,26 +443,36 @@
         let c = document.getElementById("writerNotes");
         c.innerHTML = "";
 
-        let displayNotes = [...notes].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        let displayNotes = [...notes].sort(
+          (a, b) => (b.timestamp || 0) - (a.timestamp || 0)
+        );
 
         displayNotes.forEach((n) => {
           let replies = n.replies
             .map((r, ri) => {
-              let writerResponseMarkup = r.writerReply 
+              let writerResponseMarkup = r.writerReply
                 ? `<div class="writer-response">
-                     <span>${r.writerReply.replace(/\n/g, '<br>')}</span>
-                     <div class="time-container"><span class="time">${r.writerTime || n.time}</span></div>
+                     <span>${parseSpoilers(r.writerReply)}</span>
+                     <div class="time-container"><span class="time">${
+                       r.writerTime || n.time
+                     }</span></div>
                      <div class="button-group">
-                       <button onclick="addWriterReply('${n.id}', ${ri})">Edit Response</button>
-                       <button onclick="deleteWriterReply('${n.id}', ${ri})">Delete Response</button>
+                       <button onclick="addWriterReply('${
+                         n.id
+                       }', ${ri})">Edit Response</button>
+                       <button onclick="deleteWriterReply('${
+                         n.id
+                       }', ${ri})">Delete Response</button>
                      </div>
                    </div>`
                 : `<div class="button-group"><button onclick="addWriterReply('${n.id}', ${ri})">Reply</button></div>`;
 
               return `
                 <div class="reply">
-                  <span>${r.text}</span>
-                  <div class="time-container"><span class="time">${r.time}</span></div>
+                  <span>${parseSpoilers(r.text)}</span>
+                  <div class="time-container"><span class="time">${
+                    r.time
+                  }</span></div>
                   ${writerResponseMarkup}
                 </div>
               `;
@@ -435,11 +481,15 @@
 
           c.innerHTML += `
             <div class="note">
-              <h3>${n.text.replace(/\n/g, '<br>')}</h3>
-              <div class="time-container"><span class="time">${n.time}</span></div>
+              <h3>${parseSpoilers(n.text)}</h3>
+              <div class="time-container"><span class="time">${
+                n.time
+              }</span></div>
 
               <div class="button-group" style="margin-top: 5px;">
-                <button onclick="editNote('${n.id}',\`${n.text}\`)">Edit Note</button>
+                <button onclick="editNote('${n.id}',\`${
+            n.text
+          }\`)">Edit Note</button>
                 <button onclick="deleteNote('${n.id}')">Delete Note</button>
               </div>
 
@@ -453,26 +503,34 @@
         let c = document.getElementById("viewerNotes");
         c.innerHTML = "";
 
-        let displayNotes = [...notes].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        let displayNotes = [...notes].sort(
+          (a, b) => (b.timestamp || 0) - (a.timestamp || 0)
+        );
 
         displayNotes.forEach((n) => {
           let replies = n.replies
             .map((r, ri) => {
-              let writerResponseMarkup = r.writerReply 
+              let writerResponseMarkup = r.writerReply
                 ? `<div class="writer-response">
-                     <span>${r.writerReply.replace(/\n/g, '<br>')}</span>
-                     <div class="time-container"><span class="time">${r.writerTime || n.time}</span></div>
+                     <span>${parseSpoilers(r.writerReply)}</span>
+                     <div class="time-container"><span class="time">${
+                       r.writerTime || n.time
+                     }</span></div>
                    </div>`
-                : '';
+                : "";
 
               return `
                 <div class="reply">
-                  <span>${r.text}</span>
-                  <div class="time-container"><span class="time">${r.time}</span></div>
+                  <span>${parseSpoilers(r.text)}</span>
+                  <div class="time-container"><span class="time">${
+                    r.time
+                  }</span></div>
 
                   <div class="button-group">
                     <button onclick="editReply('${n.id}',${ri})">Edit</button>
-                    <button onclick="deleteReply('${n.id}',${ri})">Delete</button>
+                    <button onclick="deleteReply('${
+                      n.id
+                    }',${ri})">Delete</button>
                   </div>
                   
                   ${writerResponseMarkup}
@@ -483,11 +541,15 @@
 
           c.innerHTML += `
             <div class="note">
-              <h3>${n.text.replace(/\n/g, '<br>')}</h3>
-              <div class="time-container"><span class="time">${n.time}</span></div>
+              <h3>${parseSpoilers(n.text)}</h3>
+              <div class="time-container"><span class="time">${
+                n.time
+              }</span></div>
 
               <input id="r${n.id}" placeholder="Leave a thought...">
-              <div class="button-group"><button onclick="addReply('${n.id}')">Comment</button></div>
+              <div class="button-group"><button onclick="addReply('${
+                n.id
+              }')">Comment</button></div>
 
               ${replies}
             </div>`;
