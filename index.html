@@ -15,27 +15,27 @@
 
       body {
         min-height: 100vh;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        background: url("https://i.pinimg.com/originals/c8/e1/57/c8e15787a56cba7278146d79c93fd7bc.gif");
+        background: url("https://i.pinimg.com/originals/c8/e1/57/c8e15787a56cba7278146d79c93fd7bc.gif")
+          no-repeat center center fixed;
         background-size: cover;
         color: white;
       }
 
-      /* OVERLAY */
+      /* OVERLAY - Fixed position and scrolling enabled for the entire screen */
       .overlay {
         width: 100%;
         min-height: 100vh;
         display: flex;
         justify-content: center;
-        align-items: center;
+        align-items: flex-start; /* Aligns to top so page can scroll downwards naturally */
+        padding: 40px 20px;
         background: radial-gradient(
           circle at center,
-          rgba(255, 0, 0, 0.15),
-          rgba(0, 0, 0, 0.9)
+          rgba(255, 0, 0, 0.1),
+          rgba(0, 0, 0, 0.85)
         );
         backdrop-filter: blur(8px);
+        overflow-y: auto;
       }
 
       .page {
@@ -47,100 +47,102 @@
         justify-content: center;
       }
 
-      /* CARD */
+      /* CARD (Background containers completely stripped, acts as a wrapper) */
       .card {
         width: 100%;
         max-width: 650px;
-        padding: 25px;
-        border-radius: 20px;
-        background: rgba(0, 0, 0, 0.6);
-        backdrop-filter: blur(15px);
-        border: 1px solid rgba(255, 0, 0, 0.4);
-        box-shadow: 0 0 25px rgba(255, 0, 0, 0.3);
         text-align: center;
-        transition: 0.3s;
-      }
-
-      .card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 0 40px rgba(255, 0, 0, 0.6);
       }
 
       /* TITLE */
       h1 {
-        margin-bottom: 10px;
+        margin-bottom: 15px;
         text-shadow: 0 0 10px red;
       }
 
-      /* INPUT */
+      /* INPUTS & TEXTAREAS (Highly Transparent) */
       input,
       textarea {
         width: 100%;
         padding: 12px;
         margin-top: 12px;
         border-radius: 10px;
-        border: 1px solid #333;
-        background: #111;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        background: rgba(0, 0, 0, 0.35);
         color: white;
         transition: 0.2s;
+        backdrop-filter: blur(5px);
       }
 
       input:focus,
       textarea:focus {
         border-color: red;
+        background: rgba(0, 0, 0, 0.5);
         box-shadow: 0 0 10px red;
+        outline: none;
       }
 
-      /* BUTTON */
+      /* BUTTONS */
       button {
         width: 100%;
         padding: 12px;
         margin-top: 12px;
         border: none;
         border-radius: 10px;
-        background: linear-gradient(45deg, red, #ff4d4d);
+        background: linear-gradient(
+          45deg,
+          rgba(255, 0, 0, 0.8),
+          rgba(255, 77, 77, 0.8)
+        );
         color: white;
         font-weight: bold;
         cursor: pointer;
         transition: 0.25s;
+        backdrop-filter: blur(5px);
       }
 
       button:hover {
         transform: translateY(-2px);
         box-shadow: 0 0 12px red;
+        background: linear-gradient(45deg, red, #ff4d4d);
       }
 
-      /* NOTE */
+      /* NOTE (More transparent with subtle background) */
       .note {
-        background: rgba(20, 20, 20, 0.9);
-        margin-top: 15px;
-        padding: 15px;
+        background: rgba(15, 15, 15, 0.55);
+        margin-top: 20px;
+        padding: 20px;
         border-radius: 12px;
-        border-left: 3px solid red;
+        border-left: 3px solid rgba(255, 0, 0, 0.7);
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        border-right: 1px solid rgba(255, 255, 255, 0.05);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         text-align: left;
         display: flex;
         flex-direction: column;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
       }
 
-      /* REPLY */
+      /* REPLY (Highly Transparent) */
       .reply {
-        background: #1a1a1a;
-        margin-top: 10px;
-        padding: 10px;
+        background: rgba(255, 255, 255, 0.05);
+        margin-top: 12px;
+        padding: 12px;
         border-radius: 10px;
-        border-left: 2px solid #555;
+        border-left: 2px solid rgba(255, 255, 255, 0.25);
         display: flex;
         flex-direction: column;
       }
 
-      /* WRITER SPECIFIC SUB-REPLY */
+      /* WRITER SPECIFIC SUB-REPLY (Highly Transparent) */
       .writer-response {
-        background: rgba(255, 0, 0, 0.15);
+        background: rgba(255, 0, 0, 0.08);
         margin-top: 8px;
         margin-left: 15px;
-        padding: 8px;
+        padding: 10px;
         border-radius: 8px;
-        border-left: 2px solid red;
+        border-left: 2px solid rgba(255, 0, 0, 0.6);
         display: flex;
         flex-direction: column;
       }
@@ -148,7 +150,7 @@
       .reply button,
       .note button {
         width: auto;
-        padding: 5px 10px;
+        padding: 5px 12px;
         margin-top: 8px;
         margin-right: 5px;
         font-size: 12px;
@@ -169,30 +171,30 @@
 
       .time {
         font-size: 11px;
-        color: #888;
+        color: rgba(255, 255, 255, 0.5);
         letter-spacing: 0.3px;
       }
 
-      /* SCROLL */
+      /* SCROLL CONTROLS REMOVED FOR FULL SCREEN EXPERIENCE */
       #writerNotes,
       #viewerNotes {
-        max-height: 320px;
-        overflow-y: auto;
+        max-height: none;
+        overflow-y: visible;
       }
 
       /* DISCORD-STYLE SPOILER CSS */
       .spoiler {
-        background-color: #222;
+        background-color: rgba(255, 255, 255, 0.15);
         color: transparent;
         border-radius: 3px;
-        padding: 0 2px;
+        padding: 0 4px;
         cursor: pointer;
         transition: background-color 0.1s ease, color 0.1s ease;
         user-select: none;
       }
 
       .spoiler.revealed {
-        background-color: rgba(255, 255, 255, 0.1);
+        background-color: rgba(255, 255, 255, 0.08);
         color: inherit;
         user-select: text;
       }
@@ -202,7 +204,7 @@
   <body>
     <div class="overlay">
       <div id="passwordPage" class="page active">
-        <div class="card">
+        <div class="card" style="margin-top: 15vh">
           <h1>🕷 thoughtz</h1>
           <input
             id="pass"
@@ -214,7 +216,7 @@
       </div>
 
       <div id="modePage" class="page">
-        <div class="card">
+        <div class="card" style="margin-top: 15vh">
           <h1>Mode</h1>
           <button onclick="mode('writer')">Writer</button>
           <button onclick="mode('viewer')">Viewer</button>
@@ -226,7 +228,8 @@
           <h1>Writer Dashboard</h1>
           <textarea
             id="noteInput"
-            placeholder="What's on your mind? (Use ||spoiler|| to hide msg:P)"
+            placeholder="What's on your mind? (Use ||spoiler|| for secret text!)"
+            rows="3"
           ></textarea>
           <button onclick="addNote()">Post Note</button>
           <button onclick="back()">Back</button>
@@ -275,7 +278,6 @@
       /* HELPER: PARSE ||SPOILER|| INTO INTERACTIVE ELEMENT */
       function parseSpoilers(text) {
         if (!text) return "";
-        // Escapes regular HTML strings, replaces linebreaks, then matches ||text|| patterns safely
         let formatted = text
           .replace(/&/g, "&amp;")
           .replace(/</g, "&lt;")
@@ -309,6 +311,8 @@
           .querySelectorAll(".page")
           .forEach((x) => x.classList.remove("active"));
         document.getElementById(p).classList.add("active");
+        // Scroll back to top when switching pages
+        document.querySelector(".overlay").scrollTop = 0;
       };
 
       window.login = () => {
