@@ -15,26 +15,25 @@
 
       body {
         min-height: 100vh;
-        background: url("https://i.pinimg.com/originals/c8/e1/57/c8e15787a56cba7278146d79c93fd7bc.gif")
-          no-repeat center center fixed;
+        background: url("https://i.pinimg.com/originals/c8/e1/57/c8e15787a56cba7278146d79c93fd7bc.gif") no-repeat center center fixed;
         background-size: cover;
         color: white;
       }
 
-      /* OVERLAY - Fixed position and scrolling enabled for the entire screen */
+      /* OVERLAY */
       .overlay {
         width: 100%;
         min-height: 100vh;
         display: flex;
         justify-content: center;
-        align-items: flex-start; /* Aligns to top so page can scroll downwards naturally */
+        align-items: flex-start;
         padding: 40px 20px;
         background: radial-gradient(
           circle at center,
           rgba(255, 0, 0, 0.1),
           rgba(0, 0, 0, 0.85)
         );
-        backdrop-filter: blur(4px);
+        backdrop-filter: blur(8px);
         overflow-y: auto;
       }
 
@@ -47,7 +46,7 @@
         justify-content: center;
       }
 
-      /* CARD (Background containers completely stripped, acts as a wrapper) */
+      /* CARD WRAPPER */
       .card {
         width: 100%;
         max-width: 650px;
@@ -60,7 +59,7 @@
         text-shadow: 0 0 10px red;
       }
 
-      /* INPUTS & TEXTAREAS (Highly Transparent) */
+      /* INPUTS & TEXTAREAS */
       input,
       textarea {
         width: 100%;
@@ -82,6 +81,42 @@
         outline: none;
       }
 
+      /* UPLOAD CONFIG PANEL */
+      .upload-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 10px;
+        background: rgba(0, 0, 0, 0.4);
+        padding: 12px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        text-align: left;
+      }
+
+      .upload-panel input[type="file"] {
+        margin-top: 0;
+        padding: 5px;
+        font-size: 12px;
+        border: none;
+        background: transparent;
+      }
+
+      .spoiler-toggle {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        white-space: nowrap;
+        cursor: pointer;
+      }
+
+      .spoiler-toggle input {
+        width: auto;
+        margin-top: 0;
+        cursor: pointer;
+      }
+
       /* BUTTONS */
       button {
         width: 100%;
@@ -89,11 +124,7 @@
         margin-top: 12px;
         border: none;
         border-radius: 10px;
-        background: linear-gradient(
-          45deg,
-          rgba(255, 0, 0, 0.8),
-          rgba(255, 77, 77, 0.8)
-        );
+        background: linear-gradient(45deg, rgba(255, 0, 0, 0.8), rgba(255, 77, 77, 0.8));
         color: white;
         font-weight: bold;
         cursor: pointer;
@@ -107,7 +138,7 @@
         background: linear-gradient(45deg, red, #ff4d4d);
       }
 
-      /* NOTE (More transparent with subtle background) */
+      /* NOTE */
       .note {
         background: rgba(15, 15, 15, 0.55);
         margin-top: 20px;
@@ -124,7 +155,7 @@
         box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
       }
 
-      /* REPLY (Highly Transparent) */
+      /* REPLY */
       .reply {
         background: rgba(255, 255, 255, 0.05);
         margin-top: 12px;
@@ -135,7 +166,7 @@
         flex-direction: column;
       }
 
-      /* WRITER SPECIFIC SUB-REPLY (Highly Transparent) */
+      /* WRITER SPECIFIC SUB-REPLY */
       .writer-response {
         background: rgba(255, 0, 0, 0.08);
         margin-top: 8px;
@@ -175,14 +206,63 @@
         letter-spacing: 0.3px;
       }
 
-      /* SCROLL CONTROLS REMOVED FOR FULL SCREEN EXPERIENCE */
-      #writerNotes,
-      #viewerNotes {
-        max-height: none;
-        overflow-y: visible;
+      /* MULTI IMAGE CONTAINER GRID */
+      .images-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 10px;
+        width: 100%;
       }
 
-      /* DISCORD-STYLE SPOILER CSS */
+      .attached-image-container {
+        max-width: calc(50% - 5px);
+        min-width: 120px;
+        flex-grow: 1;
+        position: relative;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      .attached-image {
+        display: block;
+        width: 100%;
+        max-height: 200px;
+        object-fit: cover;
+        border-radius: 8px;
+      }
+
+      /* PHOTO SPOILER MASK */
+      .image-spoiler-blur {
+        position: relative;
+        cursor: pointer;
+      }
+
+      .image-spoiler-blur::before {
+        content: "SPOILER";
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(25px);
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 12px;
+        font-weight: bold;
+        letter-spacing: 1px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 2;
+        transition: opacity 0.2s ease;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .image-spoiler-blur.revealed::before {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      /* TEXT SPOILER CSS */
       .spoiler {
         background-color: rgba(255, 255, 255, 0.15);
         color: transparent;
@@ -204,7 +284,7 @@
   <body>
     <div class="overlay">
       <div id="passwordPage" class="page active">
-        <div class="card" style="margin-top: 15vh">
+        <div class="card" style="margin-top: 15vh;">
           <h1>🕷 thoughtz</h1>
           <input
             id="pass"
@@ -216,7 +296,7 @@
       </div>
 
       <div id="modePage" class="page">
-        <div class="card" style="margin-top: 15vh">
+        <div class="card" style="margin-top: 15vh;">
           <h1>Mode</h1>
           <button onclick="mode('writer')">Writer</button>
           <button onclick="mode('viewer')">Viewer</button>
@@ -231,6 +311,15 @@
             placeholder="What's on your mind? (Use ||spoiler|| for secret text!)"
             rows="3"
           ></textarea>
+          
+          <div class="upload-panel">
+            <input type="file" id="noteFiles" accept="image/*" multiple />
+            <label class="spoiler-toggle">
+              <input type="checkbox" id="noteFilesSpoiler" />
+              Spoiler All Photos?
+            </label>
+          </div>
+
           <button onclick="addNote()">Post Note</button>
           <button onclick="back()">Back</button>
           <div id="writerNotes"></div>
@@ -278,18 +367,51 @@
       /* HELPER: PARSE ||SPOILER|| INTO INTERACTIVE ELEMENT */
       function parseSpoilers(text) {
         if (!text) return "";
-        let formatted = text
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/\n/g, "<br>");
-        return formatted.replace(
-          /\|\|(.*?)\|\|/g,
-          '<span class="spoiler" onclick="this.classList.toggle(\'revealed\')">$1</span>'
-        );
+        let formatted = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>");
+        return formatted.replace(/\|\|(.*?)\|\|/g, '<span class="spoiler" onclick="this.classList.toggle(\'revealed\')">$1</span>');
       }
 
-      /* HELPER: GET CLEAN STANDARD DATE STRING WITH SECONDS INCLUDED */
+      /* HELPER: RENDERS MULTIPLE IMAGES GRID WITH OPTIONAL SPOILERS */
+      function renderImagesMarkup(imagesArray) {
+        if (!imagesArray || imagesArray.length === 0) return "";
+        let imagesHTML = imagesArray.map(img => {
+          const classes = img.spoiler ? "attached-image-container image-spoiler-blur" : "attached-image-container";
+          return `
+            <div class="${classes}" onclick="this.classList.add('revealed')">
+              <img src="${img.data}" class="attached-image" alt="Uploaded photo" />
+            </div>
+          `;
+        }).join("");
+        return `<div class="images-grid">${imagesHTML}</div>`;
+      }
+
+      /* HELPER: CONVERT MULTIPLE FILE ATTACHMENTS TO IMAGE OBJECT ARRAYS */
+      function processMultipleFiles(fileInput, checkSpoiler) {
+        return new Promise((resolve) => {
+          if (!fileInput || !fileInput.files || fileInput.files.length === 0) return resolve([]);
+          
+          let files = Array.from(fileInput.files);
+          let loadedImages = [];
+          let processedCount = 0;
+
+          files.forEach(file => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              loadedImages.push({
+                data: reader.result,
+                spoiler: checkSpoiler
+              });
+              processedCount++;
+              if (processedCount === files.length) {
+                resolve(loadedImages);
+              }
+            };
+            reader.readAsDataURL(file);
+          });
+        });
+      }
+
+      /* HELPER: GET CLEAN STANDARD DATE STRING */
       function getFormattedDate() {
         const now = new Date();
         const options = { year: "numeric", month: "short", day: "2-digit" };
@@ -311,8 +433,6 @@
           .querySelectorAll(".page")
           .forEach((x) => x.classList.remove("active"));
         document.getElementById(p).classList.add("active");
-        // Scroll back to top when switching pages
-        document.querySelector(".overlay").scrollTop = 0;
       };
 
       window.login = () => {
@@ -334,19 +454,27 @@
         loadViewer();
       });
 
-      /* ADD NOTE */
+      /* ADD NOTE (WRITER) */
       window.addNote = async () => {
         let text = document.getElementById("noteInput").value.trim();
-        if (!text) return;
+        let fileInput = document.getElementById("noteFiles");
+        let isImageSpoiler = document.getElementById("noteFilesSpoiler").checked;
+
+        if (!text && (!fileInput.files || fileInput.files.length === 0)) return;
+
+        let imagesData = await processMultipleFiles(fileInput, isImageSpoiler);
 
         await addDoc(notesRef, {
           text,
+          images: imagesData,
           time: getFormattedDate(),
           timestamp: Date.now(),
           replies: [],
         });
 
         document.getElementById("noteInput").value = "";
+        fileInput.value = "";
+        document.getElementById("noteFilesSpoiler").checked = false;
       };
 
       /* NOTE ACTIONS */
@@ -360,19 +488,25 @@
         await updateDoc(doc(db, "notes", id), { text: t });
       };
 
-      /* VIEWER ADDS REPLY */
+      /* VIEWER ADDS COMMENT */
       window.addReply = async (id) => {
         let txt = document.getElementById("r" + id).value.trim();
-        if (!txt) return;
+        let fileInput = document.getElementById("rf" + id);
+        let isImageSpoiler = document.getElementById("rfs" + id).checked;
 
+        if (!txt && (!fileInput.files || fileInput.files.length === 0)) return;
+
+        let imagesData = await processMultipleFiles(fileInput, isImageSpoiler);
         let n = notes.find((note) => note.id === id);
         if (!n) return;
 
         n.replies.push({
           text: txt,
+          images: imagesData,
           time: getFormattedDate(),
           writerReply: "",
           writerTime: "",
+          writerImages: []
         });
 
         await updateDoc(doc(db, "notes", id), {
@@ -380,6 +514,8 @@
         });
 
         document.getElementById("r" + id).value = "";
+        fileInput.value = "";
+        document.getElementById("rfs" + id).checked = false;
       };
 
       /* WRITER ADDS/EDITS REPLY TO VIEWER */
@@ -387,14 +523,21 @@
         let n = notes.find((note) => note.id === noteId);
         if (!n) return;
 
-        let currentReply = n.replies[replyIndex].writerReply || "";
-
-        let txt = prompt("Write your response:", currentReply);
+        let currentReplyText = n.replies[replyIndex].writerReply || "";
+        let txt = prompt("Write your response text:", currentReplyText);
         if (txt === null) return;
-        txt = txt.trim();
 
-        n.replies[replyIndex].writerReply = txt;
+        let fileInput = document.getElementById(`w-file-${noteId}-${replyIndex}`);
+        let spoilerInput = document.getElementById(`w-spoiler-${noteId}-${replyIndex}`);
+        
+        let imagesData = n.replies[replyIndex].writerImages || [];
+        if (fileInput && fileInput.files && fileInput.files.length > 0) {
+          imagesData = await processMultipleFiles(fileInput, spoilerInput ? spoilerInput.checked : false);
+        }
+
+        n.replies[replyIndex].writerReply = txt.trim();
         n.replies[replyIndex].writerTime = getFormattedDate();
+        n.replies[replyIndex].writerImages = imagesData;
 
         await updateDoc(doc(db, "notes", noteId), {
           replies: n.replies,
@@ -408,6 +551,7 @@
 
         n.replies[replyIndex].writerReply = "";
         n.replies[replyIndex].writerTime = "";
+        n.replies[replyIndex].writerImages = [];
 
         await updateDoc(doc(db, "notes", noteId), {
           replies: n.replies,
@@ -442,7 +586,7 @@
         });
       };
 
-      /* RENDERING THE WRITER SCREEN (SORTED LATEST FIRST) */
+      /* RENDERING THE WRITER SCREEN */
       function loadWriter() {
         let c = document.getElementById("writerNotes");
         c.innerHTML = "";
@@ -454,29 +598,34 @@
         displayNotes.forEach((n) => {
           let replies = n.replies
             .map((r, ri) => {
-              let writerResponseMarkup = r.writerReply
+              let hasWriterContent = r.writerReply || (r.writerImages && r.writerImages.length > 0);
+              let writerResponseMarkup = hasWriterContent
                 ? `<div class="writer-response">
                      <span>${parseSpoilers(r.writerReply)}</span>
+                     ${renderImagesMarkup(r.writerImages)}
                      <div class="time-container"><span class="time">${
                        r.writerTime || n.time
                      }</span></div>
                      <div class="button-group">
-                       <button onclick="addWriterReply('${
-                         n.id
-                       }', ${ri})">Edit Response</button>
-                       <button onclick="deleteWriterReply('${
-                         n.id
-                       }', ${ri})">Delete Response</button>
+                       <button onclick="addWriterReply('${n.id}', ${ri})">Edit Response</button>
+                       <button onclick="deleteWriterReply('${n.id}', ${ri})">Delete Response</button>
                      </div>
                    </div>`
-                : `<div class="button-group"><button onclick="addWriterReply('${n.id}', ${ri})">Reply</button></div>`;
+                : `
+                <div class="upload-panel" style="margin-top: 8px;">
+                  <input type="file" id="w-file-${n.id}-${ri}" accept="image/*" multiple />
+                  <label class="spoiler-toggle">
+                    <input type="checkbox" id="w-spoiler-${n.id}-${ri}" />
+                    Spoiler Images?
+                  </label>
+                </div>
+                <div class="button-group"><button onclick="addWriterReply('${n.id}', ${ri})">Post Response</button></div>`;
 
               return `
                 <div class="reply">
                   <span>${parseSpoilers(r.text)}</span>
-                  <div class="time-container"><span class="time">${
-                    r.time
-                  }</span></div>
+                  ${renderImagesMarkup(r.images)}
+                  <div class="time-container"><span class="time">${r.time}</span></div>
                   ${writerResponseMarkup}
                 </div>
               `;
@@ -486,6 +635,8 @@
           c.innerHTML += `
             <div class="note">
               <h3>${parseSpoilers(n.text)}</h3>
+              ${renderImagesMarkup(n.images)}
+              
               <div class="time-container"><span class="time">${
                 n.time
               }</span></div>
@@ -502,7 +653,7 @@
         });
       }
 
-      /* RENDERING THE VIEWER FEED SCREEN (SORTED LATEST FIRST) */
+      /* RENDERING THE VIEWER FEED SCREEN */
       function loadViewer() {
         let c = document.getElementById("viewerNotes");
         c.innerHTML = "";
@@ -514,9 +665,11 @@
         displayNotes.forEach((n) => {
           let replies = n.replies
             .map((r, ri) => {
-              let writerResponseMarkup = r.writerReply
+              let hasWriterContent = r.writerReply || (r.writerImages && r.writerImages.length > 0);
+              let writerResponseMarkup = hasWriterContent
                 ? `<div class="writer-response">
                      <span>${parseSpoilers(r.writerReply)}</span>
+                     ${renderImagesMarkup(r.writerImages)}
                      <div class="time-container"><span class="time">${
                        r.writerTime || n.time
                      }</span></div>
@@ -526,15 +679,12 @@
               return `
                 <div class="reply">
                   <span>${parseSpoilers(r.text)}</span>
-                  <div class="time-container"><span class="time">${
-                    r.time
-                  }</span></div>
+                  ${renderImagesMarkup(r.images)}
+                  <div class="time-container"><span class="time">${r.time}</span></div>
 
                   <div class="button-group">
                     <button onclick="editReply('${n.id}',${ri})">Edit</button>
-                    <button onclick="deleteReply('${
-                      n.id
-                    }',${ri})">Delete</button>
+                    <button onclick="deleteReply('${n.id}',${ri})">Delete</button>
                   </div>
                   
                   ${writerResponseMarkup}
@@ -546,11 +696,21 @@
           c.innerHTML += `
             <div class="note">
               <h3>${parseSpoilers(n.text)}</h3>
+              ${renderImagesMarkup(n.images)}
               <div class="time-container"><span class="time">${
                 n.time
               }</span></div>
 
               <input id="r${n.id}" placeholder="Leave a thought...">
+              
+              <div class="upload-panel">
+                <input type="file" id="rf${n.id}" accept="image/*" multiple />
+                <label class="spoiler-toggle">
+                  <input type="checkbox" id="rfs${n.id}" />
+                  Spoiler Images?
+                </label>
+              </div>
+
               <div class="button-group"><button onclick="addReply('${
                 n.id
               }')">Comment</button></div>
