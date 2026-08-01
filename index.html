@@ -297,79 +297,6 @@
         color: inherit;
         user-select: text;
       }
-
-      /* AUDIO RECORDER & PLAYER STYLES */
-      .audio-container {
-        margin-top: 8px;
-        width: 100%;
-        max-width: 320px;
-        display: flex;
-        align-items: center;
-      }
-
-      .audio-container audio {
-        width: 100%;
-        height: 36px;
-        border-radius: 18px;
-        background: rgba(0, 0, 0, 0.4);
-        outline: none;
-      }
-
-      .voice-recorder-panel {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-top: 8px;
-        padding: 8px 12px;
-        background: rgba(0, 0, 0, 0.4);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 10px;
-      }
-
-      .recorder-btn {
-        width: auto !important;
-        margin-top: 0 !important;
-        padding: 6px 14px !important;
-        font-size: 11px !important;
-        border-radius: 6px !important;
-      }
-
-      .recorder-btn.recording {
-        background: linear-gradient(45deg, #ff0000, #ff5555);
-        animation: pulse-red 1.5s infinite;
-      }
-
-      .recorder-status {
-        font-size: 12px;
-        color: rgba(255, 255, 255, 0.7);
-        display: flex;
-        align-items: center;
-        gap: 6px;
-      }
-
-      .recording-dot {
-        width: 8px;
-        height: 8px;
-        background-color: #ff0000;
-        border-radius: 50%;
-        display: inline-block;
-        animation: pulse-red 1s infinite;
-      }
-
-      @keyframes pulse-red {
-        0% {
-          transform: scale(0.9);
-          opacity: 0.6;
-        }
-        50% {
-          transform: scale(1.1);
-          opacity: 1;
-        }
-        100% {
-          transform: scale(0.9);
-          opacity: 0.6;
-        }
-      }
     </style>
   </head>
 
@@ -410,36 +337,6 @@
               <input type="checkbox" id="noteFilesSpoiler" />
               Spoiler All Photos?
             </label>
-
-            <!-- Voice Memo Input for Main Post -->
-            <div class="voice-recorder-panel">
-              <span class="recorder-status" id="status-main"
-                >🎙 Voice Memo: None</span
-              >
-              <button
-                class="recorder-btn"
-                id="rec-btn-main"
-                onclick="toggleRecording('main')"
-              >
-                Record
-              </button>
-              <button
-                class="recorder-btn"
-                id="stop-btn-main"
-                onclick="stopRecording('main')"
-                style="display: none; background: #333"
-              >
-                Stop
-              </button>
-              <button
-                class="recorder-btn"
-                id="del-btn-main"
-                onclick="clearRecording('main')"
-                style="display: none; background: #444"
-              >
-                Delete Track
-              </button>
-            </div>
           </div>
 
           <button onclick="addNote()">Post Note</button>
@@ -486,77 +383,6 @@
       const PASS = "0420";
       let notes = [];
 
-      /* VOICE RECORDING CLIENT STATE ENGINE */
-      let activeRecorders = {};
-      let recordedAudioBlobs = {};
-
-      window.toggleRecording = async (id) => {
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({
-            audio: true,
-          });
-          const mediaRecorder = new MediaRecorder(stream);
-          const audioChunks = [];
-
-          mediaRecorder.ondataavailable = (event) => {
-            audioChunks.push(event.data);
-          };
-
-          mediaRecorder.onstop = async () => {
-            const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
-
-            // Convert to Base64
-            const reader = new FileReader();
-            reader.readAsDataURL(audioBlob);
-            reader.onloadend = () => {
-              recordedAudioBlobs[id] = reader.result;
-              document.getElementById(
-                `status-${id}`
-              ).innerHTML = `✔️ Track Captured!`;
-              document.getElementById(`del-btn-${id}`).style.display =
-                "inline-block";
-            };
-
-            // Kill track feeds
-            stream.getTracks().forEach((track) => track.stop());
-          };
-
-          activeRecorders[id] = mediaRecorder;
-          mediaRecorder.start();
-
-          // UI update
-          document.getElementById(`rec-btn-${id}`).style.display = "none";
-          document.getElementById(`stop-btn-${id}`).style.display =
-            "inline-block";
-          document.getElementById(
-            `status-${id}`
-          ).innerHTML = `<span class="recording-dot"></span> Recording...`;
-        } catch (err) {
-          alert("Microphone access denied or unsupported on this device.");
-          console.error(err);
-        }
-      };
-
-      window.stopRecording = (id) => {
-        if (activeRecorders[id] && activeRecorders[id].state !== "inactive") {
-          activeRecorders[id].stop();
-          document.getElementById(`stop-btn-${id}`).style.display = "none";
-          document.getElementById(`rec-btn-${id}`).style.display =
-            "inline-block";
-          document.getElementById(`rec-btn-${id}`).innerText = "Re-record";
-        }
-      };
-
-      window.clearRecording = (id) => {
-        delete recordedAudioBlobs[id];
-        delete activeRecorders[id];
-        document.getElementById(
-          `status-${id}`
-        ).innerHTML = `🎙 Voice Memo: None`;
-        document.getElementById(`del-btn-${id}`).style.display = "none";
-        document.getElementById(`rec-btn-${id}`).innerText = "Record";
-      };
-
       /* HELPER PARSERS */
       function parseSpoilers(text) {
         if (!text) return "";
@@ -586,15 +412,6 @@
           })
           .join("");
         return `<div class="images-grid">${imagesHTML}</div>`;
-      }
-
-      function renderAudioMarkup(audioData) {
-        if (!audioData) return "";
-        return `
-          <div class="audio-container">
-            <audio controls src="${audioData}"></audio>
-          </div>
-        `;
       }
 
       function processMultipleFiles(fileInput, checkSpoiler) {
@@ -657,15 +474,13 @@
         let text = document.getElementById("noteInput").value.trim();
         let fileInput = document.getElementById("noteFiles");
         let isSpoiler = document.getElementById("noteFilesSpoiler").checked;
-        let audioData = recordedAudioBlobs["main"] || "";
 
-        if (!text && fileInput.files.length === 0 && !audioData) return;
+        if (!text && fileInput.files.length === 0) return;
         let imagesData = await processMultipleFiles(fileInput, isSpoiler);
 
         await addDoc(notesRef, {
           text,
           images: imagesData,
-          audio: audioData,
           time: getFormattedDate(),
           timestamp: Date.now(),
           replies: [],
@@ -674,7 +489,6 @@
         document.getElementById("noteInput").value = "";
         fileInput.value = "";
         document.getElementById("noteFilesSpoiler").checked = false;
-        clearRecording("main");
       };
 
       window.deleteNote = async (id) => await deleteDoc(doc(db, "notes", id));
@@ -688,9 +502,8 @@
         let txt = document.getElementById("r" + id).value.trim();
         let fileInput = document.getElementById("rf" + id);
         let isSpoiler = document.getElementById("rfs" + id).checked;
-        let audioData = recordedAudioBlobs[id] || "";
 
-        if (!txt && fileInput.files.length === 0 && !audioData) return;
+        if (!txt && fileInput.files.length === 0) return;
         let imagesData = await processMultipleFiles(fileInput, isSpoiler);
         let n = notes.find((note) => note.id === id);
         if (!n) return;
@@ -698,20 +511,17 @@
         n.replies.push({
           text: txt,
           images: imagesData,
-          audio: audioData,
           time: getFormattedDate(),
           subReplies: [],
           writerReply: "",
           writerTime: "",
           writerImages: [],
-          writerAudio: "",
         });
 
         await updateDoc(doc(db, "notes", id), { replies: n.replies });
         document.getElementById("r" + id).value = "";
         fileInput.value = "";
         document.getElementById("rfs" + id).checked = false;
-        clearRecording(id);
       };
 
       /* NESTED SUB-REPLY LAYER FOR COMMENTS */
@@ -720,9 +530,8 @@
         let txt = document.getElementById(`sub-input-${idKey}`).value.trim();
         let fileInput = document.getElementById(`sub-file-${idKey}`);
         let isSpoiler = document.getElementById(`sub-spoil-${idKey}`).checked;
-        let audioData = recordedAudioBlobs[idKey] || "";
 
-        if (!txt && fileInput.files.length === 0 && !audioData) return;
+        if (!txt && fileInput.files.length === 0) return;
         let imagesData = await processMultipleFiles(fileInput, isSpoiler);
         let n = notes.find((note) => note.id === noteId);
         if (!n) return;
@@ -734,7 +543,6 @@
         n.replies[replyIndex].subReplies.push({
           text: txt,
           images: imagesData,
-          audio: audioData,
           time: getFormattedDate(),
         });
 
@@ -742,12 +550,10 @@
         document.getElementById(`sub-input-${idKey}`).value = "";
         fileInput.value = "";
         document.getElementById(`sub-spoil-${idKey}`).checked = false;
-        clearRecording(idKey);
       };
 
       /* WRITER MANAGEMENT FOR COMMENTS */
       window.addWriterReply = async (noteId, replyIndex) => {
-        const idKey = `w-${noteId}-${replyIndex}`;
         let n = notes.find((note) => note.id === noteId);
         if (!n) return;
 
@@ -760,10 +566,8 @@
         let spoilerInput = document.getElementById(
           `w-spoiler-${noteId}-${replyIndex}`
         );
-        let audioData = recordedAudioBlobs[idKey] || "";
 
-        if (!txt && (!fileInput || fileInput.files.length === 0) && !audioData)
-          return;
+        if (!txt && (!fileInput || fileInput.files.length === 0)) return;
 
         let imagesData = [];
         if (fileInput && fileInput.files.length > 0) {
@@ -776,10 +580,8 @@
         n.replies[replyIndex].writerReply = txt;
         n.replies[replyIndex].writerTime = getFormattedDate();
         n.replies[replyIndex].writerImages = imagesData;
-        n.replies[replyIndex].writerAudio = audioData;
 
         await updateDoc(doc(db, "notes", noteId), { replies: n.replies });
-        clearRecording(idKey);
       };
 
       window.deleteWriterReply = async (noteId, replyIndex) => {
@@ -788,7 +590,6 @@
         n.replies[replyIndex].writerReply = "";
         n.replies[replyIndex].writerTime = "";
         n.replies[replyIndex].writerImages = [];
-        n.replies[replyIndex].writerAudio = "";
         await updateDoc(doc(db, "notes", noteId), { replies: n.replies });
       };
 
@@ -826,7 +627,6 @@
               <div class="sub-reply-container">
                 <span>${parseSpoilers(sr.text)}</span>
                 ${renderImagesMarkup(sr.images)}
-                ${renderAudioMarkup(sr.audio)}
                 <div class="time-container"><span class="time">${
                   sr.time
                 }</span></div>
@@ -836,14 +636,11 @@
                 .join("");
 
               let hasWriterContent =
-                r.writerReply ||
-                (r.writerImages && r.writerImages.length > 0) ||
-                r.writerAudio;
+                r.writerReply || (r.writerImages && r.writerImages.length > 0);
               let writerMarkup = hasWriterContent
                 ? `<div class="writer-response">
                    <span>${parseSpoilers(r.writerReply)}</span>
                    ${renderImagesMarkup(r.writerImages)}
-                   ${renderAudioMarkup(r.writerAudio)}
                    <div class="time-container"><span class="time">${
                      r.writerTime || n.time
                    }</span></div>
@@ -858,12 +655,6 @@
                   <div class="upload-panel">
                     <input type="file" id="w-file-${n.id}-${ri}" accept="image/*" multiple />
                     <label class="spoiler-toggle"><input type="checkbox" id="w-spoiler-${n.id}-${ri}" /> Spoiler Images?</label>
-                    <div class="voice-recorder-panel">
-                      <span class="recorder-status" id="status-w-${n.id}-${ri}">🎙 Voice: None</span>
-                      <button class="recorder-btn" id="rec-btn-w-${n.id}-${ri}" onclick="toggleRecording('w-${n.id}-${ri}')">Record</button>
-                      <button class="recorder-btn" id="stop-btn-w-${n.id}-${ri}" onclick="stopRecording('w-${n.id}-${ri}')" style="display:none; background: #333;">Stop</button>
-                      <button class="recorder-btn" id="del-btn-w-${n.id}-${ri}" onclick="clearRecording('w-${n.id}-${ri}')" style="display:none; background: #444;">Delete</button>
-                    </div>
                   </div>
                   <div class="button-group"><button onclick="addWriterReply('${n.id}', ${ri})">Post Response</button></div>
                  </div>`;
@@ -872,7 +663,6 @@
               <div class="reply">
                 <span>${parseSpoilers(r.text)}</span>
                 ${renderImagesMarkup(r.images)}
-                ${renderAudioMarkup(r.audio)}
                 <div class="time-container"><span class="time">${
                   r.time
                 }</span></div>
@@ -886,7 +676,6 @@
             <div class="note">
               <h3>${parseSpoilers(n.text)}</h3>
               ${renderImagesMarkup(n.images)}
-              ${renderAudioMarkup(n.audio)}
               <div class="time-container"><span class="time">${
                 n.time
               }</span></div>
@@ -919,7 +708,6 @@
               <div class="sub-reply-container">
                 <span>${parseSpoilers(sr.text)}</span>
                 ${renderImagesMarkup(sr.images)}
-                ${renderAudioMarkup(sr.audio)}
                 <div class="time-container"><span class="time">${
                   sr.time
                 }</span></div>
@@ -929,13 +717,10 @@
                 .join("");
 
               let writerMarkup =
-                r.writerReply ||
-                (r.writerImages && r.writerImages.length > 0) ||
-                r.writerAudio
+                r.writerReply || (r.writerImages && r.writerImages.length > 0)
                   ? `<div class="writer-response">
                    <span>${parseSpoilers(r.writerReply)}</span>
                    ${renderImagesMarkup(r.writerImages)}
-                   ${renderAudioMarkup(r.writerAudio)}
                    <div class="time-container"><span class="time">${
                      r.writerTime || n.time
                    }</span></div>
@@ -946,7 +731,6 @@
               <div class="reply">
                 <span>${parseSpoilers(r.text)}</span>
                 ${renderImagesMarkup(r.images)}
-                ${renderAudioMarkup(r.audio)}
                 <div class="time-container"><span class="time">${
                   r.time
                 }</span></div>
@@ -958,7 +742,7 @@
                 ${subRepliesList}
                 ${writerMarkup}
 
-                <!-- Inner sub-reply text area + photos + voice recording -->
+                <!-- Inner sub-reply text area + photos -->
                 <div style="margin-left:20px; margin-top:10px;">
                   <input id="sub-input-${idKey}" placeholder="Reply to this comment..." style="padding:8px; font-size:13px; margin-top:5px;">
                   <div class="upload-panel" style="padding:8px;">
@@ -966,12 +750,6 @@
                     <label class="spoiler-toggle" style="font-size:11px;">
                       <input type="checkbox" id="sub-spoil-${idKey}"> Spoiler Images?
                     </label>
-                    <div class="voice-recorder-panel" style="padding: 4px; margin-top: 4px;">
-                      <span class="recorder-status" id="status-${idKey}" style="font-size:11px;">🎙 Voice: None</span>
-                      <button class="recorder-btn" id="rec-btn-${idKey}" onclick="toggleRecording('${idKey}')">Record</button>
-                      <button class="recorder-btn" id="stop-btn-${idKey}" onclick="stopRecording('${idKey}')" style="display:none; background: #333;">Stop</button>
-                      <button class="recorder-btn" id="del-btn-${idKey}" onclick="clearRecording('${idKey}')" style="display:none; background: #444;">Delete</button>
-                    </div>
                   </div>
                   <button onclick="addSubReply('${n.id}', ${ri})">Reply</button>
                 </div>
@@ -983,7 +761,6 @@
             <div class="note">
               <h3>${parseSpoilers(n.text)}</h3>
               ${renderImagesMarkup(n.images)}
-              ${renderAudioMarkup(n.audio)}
               <div class="time-container"><span class="time">${
                 n.time
               }</span></div>
@@ -994,24 +771,6 @@
                 <label class="spoiler-toggle"><input type="checkbox" id="rfs${
                   n.id
                 }" /> Spoiler Images?</label>
-                <div class="voice-recorder-panel">
-                  <span class="recorder-status" id="status-${
-                    n.id
-                  }">🎙 Voice Memo: None</span>
-                  <button class="recorder-btn" id="rec-btn-${
-                    n.id
-                  }" onclick="toggleRecording('${n.id}')">Record</button>
-                  <button class="recorder-btn" id="stop-btn-${
-                    n.id
-                  }" onclick="stopRecording('${
-            n.id
-          }')" style="display:none; background: #333;">Stop</button>
-                  <button class="recorder-btn" id="del-btn-${
-                    n.id
-                  }" onclick="clearRecording('${
-            n.id
-          }')" style="display:none; background: #444;">Delete Track</button>
-                </div>
               </div>
               <div class="button-group"><button onclick="addReply('${
                 n.id
