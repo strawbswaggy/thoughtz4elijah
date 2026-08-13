@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>thoughtz</title>
 
+    <!-- Browser Tab Favicon -->
+    <link
+      rel="icon"
+      type="image/jpeg"
+      href="https://i.pinimg.com/736x/88/2c/82/882c828b6d85df0e58e37dff75b3bd20.jpg"
+    />
+
     <style>
       * {
         margin: 0;
@@ -477,13 +484,6 @@
         if (document.getElementById("pass").value === PASS) show("modePage");
         else alert("Wrong password");
       };
-
-      /* ENTER KEY EVENT LISTENER FOR PASSWORD INPUT */
-      document.getElementById("pass").addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-          login();
-        }
-      });
 
       window.mode = (m) => show(m === "writer" ? "writerPage" : "viewerPage");
       window.back = () => show("modePage");
