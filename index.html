@@ -306,6 +306,7 @@
             id="pass"
             type="password"
             placeholder="Enter password (hint bday!)"
+            onkeydown="if(event.key==='Enter') login()"
           />
           <button onclick="login()">ENTER</button>
         </div>
@@ -326,6 +327,7 @@
             id="noteInput"
             placeholder="What's on your mind? (||spoiler||)"
             rows="3"
+            onkeydown="if(event.key==='Enter' && !event.shiftKey){ event.preventDefault(); addNote(); }"
           ></textarea>
 
           <div class="upload-panel">
@@ -380,7 +382,7 @@
       const PASS = "0420";
       let notes = [];
 
-      /* IMAGE COMPRESSION HELPER (Compresses Base64 payload down to ~80KB) */
+      /* IMAGE COMPRESSION HELPER */
       function compressImage(file, maxWidth = 800, quality = 0.7) {
         return new Promise((resolve) => {
           const reader = new FileReader();
@@ -662,7 +664,7 @@
                    </div>
                  </div>`
                 : `<div style="margin-top:10px;">
-                  <input id="w-input-${n.id}-${ri}" placeholder="Write response text...">
+                  <input id="w-input-${n.id}-${ri}" placeholder="Write response text..." onkeydown="if(event.key==='Enter') addWriterReply('${n.id}', ${ri})">
                   <div class="upload-panel">
                     <input type="file" id="w-file-${n.id}-${ri}" accept="image/*" multiple />
                     <label class="spoiler-toggle"><input type="checkbox" id="w-spoiler-${n.id}-${ri}" /> Spoiler Images?</label>
@@ -754,7 +756,7 @@
                 ${writerMarkup}
 
                 <div style="margin-left:20px; margin-top:10px;">
-                  <input id="sub-input-${idKey}" placeholder="Reply to this comment..." style="padding:8px; font-size:13px; margin-top:5px;">
+                  <input id="sub-input-${idKey}" placeholder="Reply to this comment..." style="padding:8px; font-size:13px; margin-top:5px;" onkeydown="if(event.key==='Enter') addSubReply('${n.id}', ${ri})">
                   <div class="upload-panel" style="padding:8px;">
                     <input type="file" id="sub-file-${idKey}" accept="image/*" multiple style="font-size:11px;">
                     <label class="spoiler-toggle" style="font-size:11px;">
@@ -775,7 +777,7 @@
                 n.time
               }</span></div>
 
-              <input id="r${n.id}" placeholder="Leave a thought...">
+              <input id="r${n.id}" placeholder="Leave a thought..." onkeydown="if(event.key==='Enter') addReply('${n.id}')">
               <div class="upload-panel">
                 <input type="file" id="rf${n.id}" accept="image/*" multiple />
                 <label class="spoiler-toggle"><input type="checkbox" id="rfs${
