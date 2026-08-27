@@ -564,7 +564,16 @@
           time: getFormattedDate(),
         });
 
-        await updateDoc(doc(doc(db, "notes", noteId)), { replies: n.replies });
+        await updateDoc(doc(db, "notes", noteId), { replies: n.replies });
+      };
+
+      /* DELETE SUB-REPLY */
+      window.deleteSubReply = async (noteId, replyIndex, subIndex) => {
+        let n = notes.find((note) => note.id === noteId);
+        if (!n || !n.replies[replyIndex] || !n.replies[replyIndex].subReplies) return;
+
+        n.replies[replyIndex].subReplies.splice(subIndex, 1);
+        await updateDoc(doc(db, "notes", noteId), { replies: n.replies });
       };
 
       /* WRITER MANAGEMENT FOR COMMENTS */
@@ -637,13 +646,16 @@
             .map((r, ri) => {
               let subRepliesList = (r.subReplies || [])
                 .map(
-                  (sr) => `
+                  (sr, si) => `
               <div class="sub-reply-container">
                 <span>${parseSpoilers(sr.text)}</span>
                 ${renderImagesMarkup(sr.images)}
                 <div class="time-container"><span class="time">${
                   sr.time
                 }</span></div>
+                <div class="button-group">
+                  <button onclick="deleteSubReply('${n.id}', ${ri}, ${si})">Delete</button>
+                </div>
               </div>`
                 )
                 .join("");
@@ -718,13 +730,16 @@
               const idKey = `${n.id}-${ri}`;
               let subRepliesList = (r.subReplies || [])
                 .map(
-                  (sr) => `
+                  (sr, si) => `
               <div class="sub-reply-container">
                 <span>${parseSpoilers(sr.text)}</span>
                 ${renderImagesMarkup(sr.images)}
                 <div class="time-container"><span class="time">${
                   sr.time
                 }</span></div>
+                <div class="button-group">
+                  <button onclick="deleteSubReply('${n.id}', ${ri}, ${si})">Delete</button>
+                </div>
               </div>`
                 )
                 .join("");
