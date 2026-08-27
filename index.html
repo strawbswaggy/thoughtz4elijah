@@ -21,7 +21,6 @@
         color: white;
       }
 
-      /* OVERLAY */
       .overlay {
         width: 100%;
         min-height: 100vh;
@@ -48,20 +47,17 @@
         justify-content: center;
       }
 
-      /* CARD WRAPPER */
       .card {
         width: 100%;
         max-width: 650px;
         text-align: center;
       }
 
-      /* TITLE */
       h1 {
         margin-bottom: 15px;
         text-shadow: 0 0 10px red;
       }
 
-      /* INPUTS & TEXTAREAS */
       input,
       textarea {
         width: 100%;
@@ -82,7 +78,6 @@
         outline: none;
       }
 
-      /* UPLOAD CONFIG PANEL */
       .upload-panel {
         display: flex;
         flex-direction: column;
@@ -118,7 +113,6 @@
         cursor: pointer;
       }
 
-      /* BUTTONS */
       button {
         width: 100%;
         padding: 12px;
@@ -142,6 +136,13 @@
         background: linear-gradient(45deg, red, #ff4d4d);
       }
 
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+
       .btn-secondary {
         background: rgba(60, 60, 60, 0.8);
       }
@@ -154,7 +155,6 @@
         background: linear-gradient(45deg, #8b0000, #ff0000);
       }
 
-      /* MAIN NOTE CONTAINER */
       .note, .trash-item {
         background: rgba(20, 20, 20, 0.85);
         margin-top: 20px;
@@ -174,7 +174,6 @@
         border-left: 3px solid #ff9800;
       }
 
-      /* COMMENTS */
       .reply {
         background: rgba(35, 35, 35, 0.6);
         margin-top: 15px;
@@ -185,7 +184,6 @@
         flex-direction: column;
       }
 
-      /* SUB-REPLIES TO COMMENTS */
       .sub-reply-container {
         background: rgba(45, 45, 45, 0.4);
         margin-top: 10px;
@@ -197,7 +195,6 @@
         flex-direction: column;
       }
 
-      /* WRITER SPECIFIC FEEDBACK TRACK */
       .writer-response {
         background: rgba(60, 0, 0, 0.3);
         margin-top: 10px;
@@ -226,7 +223,6 @@
         flex-wrap: wrap;
       }
 
-      /* TIMESTAMPS & COUNTDOWNS */
       .time-container {
         display: flex;
         justify-content: space-between;
@@ -247,7 +243,6 @@
         font-weight: bold;
       }
 
-      /* MULTI MEDIA GRID */
       .images-grid {
         display: flex;
         flex-wrap: wrap;
@@ -265,8 +260,7 @@
         overflow: hidden;
       }
 
-      .attached-image,
-      .attached-video {
+      .attached-image {
         display: block;
         width: 100%;
         max-height: 200px;
@@ -274,7 +268,6 @@
         border-radius: 6px;
       }
 
-      /* MEDIA SPOILER */
       .image-spoiler-blur {
         position: relative;
         cursor: pointer;
@@ -303,7 +296,6 @@
         pointer-events: none;
       }
 
-      /* TEXT SPOILER CSS */
       .spoiler {
         background-color: rgba(255, 255, 255, 0.18);
         color: transparent;
@@ -367,14 +359,14 @@
           ></textarea>
 
           <div class="upload-panel">
-            <input type="file" id="noteFiles" accept="image/*,video/*" multiple />
+            <input type="file" id="noteFiles" accept="image/*" multiple />
             <label class="spoiler-toggle">
               <input type="checkbox" id="noteFilesSpoiler" />
-              Spoiler All Media?
+              Spoiler All Images?
             </label>
           </div>
 
-          <button onclick="addNote()">Post Note</button>
+          <button id="postNoteBtn" onclick="addNote()">Post Note</button>
           <button class="btn-secondary" onclick="show('trashPage')">🗑 Recently Deleted</button>
           <button onclick="back()">Back</button>
           <div id="writerNotes"></div>
@@ -434,9 +426,8 @@
       let notes = [];
       let trashItems = [];
 
-      /* IMAGE COMPRESSION HELPER */
-      function compressImage(file, maxWidth = 800, quality = 0.7) {
-        return new Promise((resolve) => {
+      function compressImage(file, maxWidth = 600, quality = 0.6) {
+        return new Promise((resolve, reject) => {
           const reader = new FileReader();
           reader.readAsDataURL(file);
           reader.onload = (e) => {
@@ -456,23 +447,14 @@
               canvas.height = height;
               const ctx = canvas.getContext("2d");
               ctx.drawImage(img, 0, 0, width, height);
-
               resolve(canvas.toDataURL("image/jpeg", quality));
             };
+            img.onerror = () => reject("Failed to process image");
           };
+          reader.onerror = () => reject("Failed to read file");
         });
       }
 
-      /* FILE CONVERTER FOR VIDEOS */
-      function readVideoFile(file) {
-        return new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.readAsDataURL(file);
-          reader.onload = (e) => resolve(e.target.result);
-        });
-      }
-
-      /* HELPER PARSERS */
       function parseSpoilers(text) {
         if (!text) return "";
         let formatted = text
@@ -494,13 +476,6 @@
               ? "attached-image-container image-spoiler-blur"
               : "attached-image-container";
 
-            if (item.type === "video") {
-              return `
-              <div class="${classes}" onclick="this.classList.add('revealed')">
-                <video src="${item.data}" class="attached-video" controls preload="metadata"></video>
-              </div>`;
-            }
-
             return `
             <div class="${classes}" onclick="this.classList.add('revealed')">
               <img src="${item.data}" class="attached-image" alt="Uploaded asset" loading="lazy" />
@@ -517,12 +492,11 @@
         let loadedMedia = [];
 
         for (let file of files) {
-          if (file.type.startsWith("video/")) {
-            const videoData = await readVideoFile(file);
-            loadedMedia.push({ data: videoData, type: "video", spoiler: checkSpoiler });
-          } else {
+          try {
             const compressedData = await compressImage(file);
             loadedMedia.push({ data: compressedData, type: "image", spoiler: checkSpoiler });
+          } catch (e) {
+            console.error("Skipped media item due to processing limit", e);
           }
         }
         return loadedMedia;
@@ -540,7 +514,6 @@
         return `${datePart} • ${hours}:${minutes}:${seconds} ${ampm}`;
       }
 
-      /* COUNTDOWN CALCULATOR */
       function getDaysRemaining(deletedTimestamp) {
         const elapsed = Date.now() - deletedTimestamp;
         const remainingMs = THIRTY_DAYS_MS - elapsed;
@@ -548,7 +521,6 @@
         return Math.ceil(remainingMs / (1000 * 60 * 60 * 24));
       }
 
-      /* AUTO-PURGE EXPIRED TRASH */
       async function cleanExpiredTrash(snapDocs) {
         const now = Date.now();
         for (let docSnap of snapDocs) {
@@ -559,7 +531,6 @@
         }
       }
 
-      /* UI NAVIGATION */
       window.show = (p) => {
         document
           .querySelectorAll(".page")
@@ -575,7 +546,6 @@
       window.mode = (m) => show(m === "writer" ? "writerPage" : "viewerPage");
       window.back = () => show("modePage");
 
-      /* DB REALTIME LISTENERS */
       onSnapshot(notesRef, (snap) => {
         notes = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
         loadWriter();
@@ -588,26 +558,38 @@
         loadTrash();
       });
 
-      /* ADD MAIN POST */
       window.addNote = async () => {
         let text = document.getElementById("noteInput").value.trim();
         let fileInput = document.getElementById("noteFiles");
         let isSpoiler = document.getElementById("noteFilesSpoiler").checked;
+        let btn = document.getElementById("postNoteBtn");
 
         if (!text && fileInput.files.length === 0) return;
-        let imagesData = await processMultipleFiles(fileInput, isSpoiler);
 
-        await addDoc(notesRef, {
-          text,
-          images: imagesData,
-          time: getFormattedDate(),
-          timestamp: Date.now(),
-          replies: [],
-        });
+        btn.disabled = true;
+        btn.innerText = "Uploading...";
 
-        document.getElementById("noteInput").value = "";
-        fileInput.value = "";
-        document.getElementById("noteFilesSpoiler").checked = false;
+        try {
+          let imagesData = await processMultipleFiles(fileInput, isSpoiler);
+
+          await addDoc(notesRef, {
+            text,
+            images: imagesData,
+            time: getFormattedDate(),
+            timestamp: Date.now(),
+            replies: [],
+          });
+
+          document.getElementById("noteInput").value = "";
+          fileInput.value = "";
+          document.getElementById("noteFilesSpoiler").checked = false;
+        } catch (err) {
+          alert("Failed to upload note.");
+          console.error(err);
+        } finally {
+          btn.disabled = false;
+          btn.innerText = "Post Note";
+        }
       };
 
       window.editNote = async (id, old) => {
@@ -615,7 +597,6 @@
         if (t) await updateDoc(doc(db, "notes", id), { text: t });
       };
 
-      /* TRASH SYSTEM MOVEMENTS */
       window.deleteNote = async (id) => {
         let n = notes.find((note) => note.id === id);
         if (!n) return;
@@ -685,7 +666,6 @@
         await updateDoc(doc(db, "notes", noteId), { replies: n.replies });
       };
 
-      /* RESTORE & PERMANENT DELETE */
       window.restoreItem = async (trashId) => {
         let item = trashItems.find((t) => t.trashId === trashId);
         if (!item) return;
@@ -700,7 +680,7 @@
             parent.replies.push(item.payload);
             await updateDoc(doc(db, "notes", parent.id), { replies: parent.replies });
           } else {
-            alert("Original note no longer exists. Post cannot be restored to parent feed.");
+            alert("Original note no longer exists.");
             return;
           }
         } else if (item.type === "subReply") {
@@ -712,7 +692,7 @@
             parent.replies[item.replyIndex].subReplies.push(item.payload);
             await updateDoc(doc(db, "notes", parent.id), { replies: parent.replies });
           } else {
-            alert("Parent comment no longer exists. Sub-reply cannot be restored.");
+            alert("Parent comment no longer exists.");
             return;
           }
         } else if (item.type === "writerReply") {
@@ -723,7 +703,7 @@
             parent.replies[item.replyIndex].writerImages = item.payload.writerImages;
             await updateDoc(doc(db, "notes", parent.id), { replies: parent.replies });
           } else {
-            alert("Parent comment no longer exists. Response cannot be restored.");
+            alert("Parent comment no longer exists.");
             return;
           }
         }
@@ -737,31 +717,34 @@
         }
       };
 
-      /* COMMENT LEVEL SYSTEM */
       window.addReply = async (id) => {
         let txt = document.getElementById("r" + id).value.trim();
         let fileInput = document.getElementById("rf" + id);
         let isSpoiler = document.getElementById("rfs" + id).checked;
 
         if (!txt && fileInput.files.length === 0) return;
-        let imagesData = await processMultipleFiles(fileInput, isSpoiler);
-        let n = notes.find((note) => note.id === id);
-        if (!n) return;
+        
+        try {
+          let imagesData = await processMultipleFiles(fileInput, isSpoiler);
+          let n = notes.find((note) => note.id === id);
+          if (!n) return;
 
-        n.replies.push({
-          text: txt,
-          images: imagesData,
-          time: getFormattedDate(),
-          subReplies: [],
-          writerReply: "",
-          writerTime: "",
-          writerImages: [],
-        });
+          n.replies.push({
+            text: txt,
+            images: imagesData,
+            time: getFormattedDate(),
+            subReplies: [],
+            writerReply: "",
+            writerTime: "",
+            writerImages: [],
+          });
 
-        await updateDoc(doc(db, "notes", id), { replies: n.replies });
+          await updateDoc(doc(db, "notes", id), { replies: n.replies });
+        } catch(e) {
+          alert("Could not post comment.");
+        }
       };
 
-      /* NESTED SUB-REPLY LAYER FOR COMMENTS */
       window.addSubReply = async (noteId, replyIndex) => {
         const idKey = `${noteId}-${replyIndex}`;
         let txt = document.getElementById(`sub-input-${idKey}`).value.trim();
@@ -769,24 +752,28 @@
         let isSpoiler = document.getElementById(`sub-spoil-${idKey}`).checked;
 
         if (!txt && fileInput.files.length === 0) return;
-        let imagesData = await processMultipleFiles(fileInput, isSpoiler);
-        let n = notes.find((note) => note.id === noteId);
-        if (!n) return;
 
-        if (!n.replies[replyIndex].subReplies) {
-          n.replies[replyIndex].subReplies = [];
+        try {
+          let imagesData = await processMultipleFiles(fileInput, isSpoiler);
+          let n = notes.find((note) => note.id === noteId);
+          if (!n) return;
+
+          if (!n.replies[replyIndex].subReplies) {
+            n.replies[replyIndex].subReplies = [];
+          }
+
+          n.replies[replyIndex].subReplies.push({
+            text: txt,
+            images: imagesData,
+            time: getFormattedDate(),
+          });
+
+          await updateDoc(doc(db, "notes", noteId), { replies: n.replies });
+        } catch(e) {
+          alert("Could not post sub-reply.");
         }
-
-        n.replies[replyIndex].subReplies.push({
-          text: txt,
-          images: imagesData,
-          time: getFormattedDate(),
-        });
-
-        await updateDoc(doc(db, "notes", noteId), { replies: n.replies });
       };
 
-      /* WRITER MANAGEMENT FOR COMMENTS */
       window.addWriterReply = async (noteId, replyIndex) => {
         let n = notes.find((note) => note.id === noteId);
         if (!n) return;
@@ -803,19 +790,23 @@
 
         if (!txt && (!fileInput || fileInput.files.length === 0)) return;
 
-        let imagesData = [];
-        if (fileInput && fileInput.files.length > 0) {
-          imagesData = await processMultipleFiles(
-            fileInput,
-            spoilerInput ? spoilerInput.checked : false
-          );
+        try {
+          let imagesData = [];
+          if (fileInput && fileInput.files.length > 0) {
+            imagesData = await processMultipleFiles(
+              fileInput,
+              spoilerInput ? spoilerInput.checked : false
+            );
+          }
+
+          n.replies[replyIndex].writerReply = txt;
+          n.replies[replyIndex].writerTime = getFormattedDate();
+          n.replies[replyIndex].writerImages = imagesData;
+
+          await updateDoc(doc(db, "notes", noteId), { replies: n.replies });
+        } catch(e) {
+          alert("Could not post writer response.");
         }
-
-        n.replies[replyIndex].writerReply = txt;
-        n.replies[replyIndex].writerTime = getFormattedDate();
-        n.replies[replyIndex].writerImages = imagesData;
-
-        await updateDoc(doc(db, "notes", noteId), { replies: n.replies });
       };
 
       window.editReply = async (noteId, replyIndex) => {
@@ -828,7 +819,6 @@
         }
       };
 
-      /* BUILD WRITER INTERFACE SCREEN */
       function loadWriter() {
         let c = document.getElementById("writerNotes");
         let displayNotes = [...notes].sort(
@@ -872,7 +862,7 @@
                 : `<div style="margin-top:10px;">
                   <input id="w-input-${n.id}-${ri}" placeholder="Write response text..." onkeydown="if(event.key==='Enter') addWriterReply('${n.id}', ${ri})">
                   <div class="upload-panel">
-                    <input type="file" id="w-file-${n.id}-${ri}" accept="image/*,video/*" multiple />
+                    <input type="file" id="w-file-${n.id}-${ri}" accept="image/*" multiple />
                     <label class="spoiler-toggle"><input type="checkbox" id="w-spoiler-${n.id}-${ri}" /> Spoiler Media?</label>
                   </div>
                   <div class="button-group"><button onclick="addWriterReply('${n.id}', ${ri})">Post Response</button></div>
@@ -911,7 +901,6 @@
         c.innerHTML = htmlBuffer.join("");
       }
 
-      /* BUILD VIEWER FEED SCREEN */
       function loadViewer() {
         let c = document.getElementById("viewerNotes");
         let displayNotes = [...notes].sort(
@@ -967,7 +956,7 @@
                 <div style="margin-left:20px; margin-top:10px;">
                   <input id="sub-input-${idKey}" placeholder="Reply to this comment..." style="padding:8px; font-size:13px; margin-top:5px;" onkeydown="if(event.key==='Enter') addSubReply('${n.id}', ${ri})">
                   <div class="upload-panel" style="padding:8px;">
-                    <input type="file" id="sub-file-${idKey}" accept="image/*,video/*" multiple style="font-size:11px;">
+                    <input type="file" id="sub-file-${idKey}" accept="image/*" multiple style="font-size:11px;">
                     <label class="spoiler-toggle" style="font-size:11px;">
                       <input type="checkbox" id="sub-spoil-${idKey}"> Spoiler Media?
                     </label>
@@ -988,7 +977,7 @@
 
               <input id="r${n.id}" placeholder="Leave a thought..." onkeydown="if(event.key==='Enter') addReply('${n.id}')">
               <div class="upload-panel">
-                <input type="file" id="rf${n.id}" accept="image/*,video/*" multiple />
+                <input type="file" id="rf${n.id}" accept="image/*" multiple />
                 <label class="spoiler-toggle"><input type="checkbox" id="rfs${
                   n.id
                 }" /> Spoiler Media?</label>
@@ -1004,7 +993,6 @@
         c.innerHTML = htmlBuffer.join("");
       }
 
-      /* BUILD RECENTLY DELETED (TRASH) SCREEN */
       function loadTrash() {
         let container = document.getElementById("trashContainer");
         if (!trashItems || trashItems.length === 0) {
